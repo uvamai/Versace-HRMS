@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from app.config import settings
-from app.database import engine, Base
+from app.database import AsyncSessionLocal, engine, Base
+from app.modules.auth.seed import create_default_roles, create_default_super_admin
 from app.shared.middleware import AuditMiddleware, RequestIDMiddleware
 
 # ── Module routers ────────────────────────────────────────────
@@ -26,6 +27,10 @@ async def lifespan(app: FastAPI):
         # Only create tables in dev — use Alembic in production
         if settings.APP_ENV == "development":
             await conn.run_sync(Base.metadata.create_all)
+    async with AsyncSessionLocal() as session:
+        await create_default_roles(session)
+        await create_default_super_admin(session)
+        await session.commit()
     yield
     # Shutdown
     await engine.dispose()

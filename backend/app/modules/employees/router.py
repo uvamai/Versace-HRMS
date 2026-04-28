@@ -30,6 +30,20 @@ class EmployeeCreateRequest(BaseModel):
     mobile_phone: Optional[str] = None
 
 
+class EmployeeUpdateRequest(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    work_email: Optional[EmailStr] = None
+    date_of_joining: Optional[date] = None
+    department_id: Optional[uuid.UUID] = None
+    designation_id: Optional[uuid.UUID] = None
+    employment_type_id: Optional[uuid.UUID] = None
+    reports_to_id: Optional[uuid.UUID] = None
+    gender: Optional[str] = None
+    mobile_phone: Optional[str] = None
+    status: Optional[str] = None
+
+
 class EmployeeResponse(BaseModel):
     id: uuid.UUID
     employee_number: str
@@ -39,6 +53,12 @@ class EmployeeResponse(BaseModel):
     work_email: str
     status: str
     date_of_joining: date
+    department_id: Optional[uuid.UUID] = None
+    designation_id: Optional[uuid.UUID] = None
+    employment_type_id: Optional[uuid.UUID] = None
+    reports_to_id: Optional[uuid.UUID] = None
+    gender: Optional[str] = None
+    mobile_phone: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -98,6 +118,12 @@ async def list_employees(
             work_email=e.work_email,
             status=e.status,
             date_of_joining=e.date_of_joining,
+            department_id=e.department_id,
+            designation_id=e.designation_id,
+            employment_type_id=e.employment_type_id,
+            reports_to_id=e.reports_to_id,
+            gender=e.gender,
+            mobile_phone=e.mobile_phone,
             created_at=e.created_at,
         ) for e in employees],
         total=total,
@@ -138,6 +164,12 @@ async def create_employee(
         work_email=employee.work_email,
         status=employee.status,
         date_of_joining=employee.date_of_joining,
+        department_id=employee.department_id,
+        designation_id=employee.designation_id,
+        employment_type_id=employee.employment_type_id,
+        reports_to_id=employee.reports_to_id,
+        gender=employee.gender,
+        mobile_phone=employee.mobile_phone,
         created_at=employee.created_at,
     )
 
@@ -165,6 +197,53 @@ async def get_employee(
         work_email=employee.work_email,
         status=employee.status,
         date_of_joining=employee.date_of_joining,
+        department_id=employee.department_id,
+        designation_id=employee.designation_id,
+        employment_type_id=employee.employment_type_id,
+        reports_to_id=employee.reports_to_id,
+        gender=employee.gender,
+        mobile_phone=employee.mobile_phone,
+        created_at=employee.created_at,
+    )
+
+
+@router.patch("/{employee_id}", response_model=EmployeeResponse)
+async def update_employee(
+    employee_id: uuid.UUID,
+    data: EmployeeUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_hr_admin),
+):
+    """Update employee fields. Requires HR_ADMIN role."""
+    result = await db.execute(
+        select(Employee).where(Employee.id == employee_id, Employee.deleted_at.is_(None))
+    )
+    employee = result.scalar_one_or_none()
+    if not employee:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(employee, field, value)
+
+    await db.flush()
+    await db.refresh(employee)
+
+    return EmployeeResponse(
+        id=employee.id,
+        employee_number=employee.employee_number,
+        first_name=employee.first_name,
+        last_name=employee.last_name,
+        full_name=employee.full_name,
+        work_email=employee.work_email,
+        status=employee.status,
+        date_of_joining=employee.date_of_joining,
+        department_id=employee.department_id,
+        designation_id=employee.designation_id,
+        employment_type_id=employee.employment_type_id,
+        reports_to_id=employee.reports_to_id,
+        gender=employee.gender,
+        mobile_phone=employee.mobile_phone,
         created_at=employee.created_at,
     )
 

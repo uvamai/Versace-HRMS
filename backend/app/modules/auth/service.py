@@ -41,7 +41,7 @@ def create_access_token(user_id: str, roles: list[str]) -> str:
         "iat": datetime.now(timezone.utc),
         "jti": str(uuid.uuid4()),
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 def create_refresh_token_str() -> str:
@@ -54,7 +54,7 @@ def hash_token(token: str) -> str:
 
 def decode_access_token(token: str) -> dict:
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         if payload.get("type") != "access":
             raise ValueError("Invalid token type")
         return payload
@@ -90,6 +90,8 @@ class AuthService:
 
         user = User(
             email=data.email,
+            first_name=data.first_name,
+            last_name=data.last_name,
             hashed_password=hash_password(data.password),
             is_active=True,
         )
@@ -173,8 +175,8 @@ class AuthService:
         return UserResponse(
             id=user.id,
             email=user.email,
-            is_active=user.is_active,
-            is_verified=user.is_verified,
+            first_name=user.first_name,
+            last_name=user.last_name,
             roles=user.role_names,
             last_login=user.last_login,
             created_at=user.created_at,

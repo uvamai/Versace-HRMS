@@ -27,6 +27,8 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -47,6 +49,10 @@ class User(Base):
     @property
     def role_names(self) -> list[str]:
         return [r.name for r in self.roles]
+
+    @property
+    def full_name(self) -> str:
+        return " ".join(name for name in [self.first_name, self.last_name] if name)
 
 
 class Role(Base):

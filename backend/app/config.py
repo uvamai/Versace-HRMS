@@ -3,14 +3,18 @@ Application configuration using Pydantic Settings.
 Reads from environment variables / .env file.
 """
 from functools import lru_cache
+from pathlib import Path
 from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(ROOT_DIR / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -35,7 +39,7 @@ class Settings(BaseSettings):
         return base
 
     # ── Database ─────────────────────────────────────────────
-    DATABASE_URL: str = "postgresql+asyncpg://hrms:hrms_password@localhost:5432/hrms_db"
+    DATABASE_URL: str = "postgresql+asyncpg://hrms:hrms_password@localhost:5434/hrms_db"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
@@ -63,6 +67,13 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_S3_BUCKET: str = ""
     AWS_S3_REGION: str = "us-east-1"
+
+    # ── Default admin bootstrap (development only) ─────────────
+    CREATE_DEFAULT_SUPER_ADMIN: bool = False
+    DEFAULT_SUPER_ADMIN_EMAIL: str = "admin@versace-hrms.local"
+    DEFAULT_SUPER_ADMIN_PASSWORD: str = "Admin1234!"
+    DEFAULT_SUPER_ADMIN_FIRST_NAME: str = "Super"
+    DEFAULT_SUPER_ADMIN_LAST_NAME: str = "Admin"
 
     # ── Pagination defaults ───────────────────────────────────
     DEFAULT_PAGE_SIZE: int = 20
