@@ -22,18 +22,26 @@ $content = $content -replace 'localhost', '127.0.0.1'
 $content | Set-Content ".env"
 
 # Parse .env
-$dbPass = "jayking46"
+$dbUser = "postgres"
+$dbPass = "your_password"
+$dbHost = "127.0.0.1"
+$dbPort = "5432"
+$dbName = "hrms_db"
 Get-Content ".env" | ForEach-Object {
+    if ($_ -match "^POSTGRES_USER=(.*)$") { $dbUser = $Matches[1].Trim() }
     if ($_ -match "^POSTGRES_PASSWORD=(.*)$") { $dbPass = $Matches[1].Trim() }
+    if ($_ -match "^POSTGRES_HOST=(.*)$") { $dbHost = $Matches[1].Trim() }
+    if ($_ -match "^POSTGRES_PORT=(.*)$") { $dbPort = $Matches[1].Trim() }
+    if ($_ -match "^POSTGRES_DB=(.*)$") { $dbName = $Matches[1].Trim() }
 }
 
 # 2. Database
 Write-Host "[2/6] Database check..." -ForegroundColor Yellow
-$conn = "postgresql://postgres:$($dbPass)@127.0.0.1:5432/postgres"
+$conn = "postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/postgres"
 try {
-    $exists = psql -w "$conn" -tAc "SELECT 1 FROM pg_database WHERE datname='hrms_db'"
+    $exists = psql -w "$conn" -tAc "SELECT 1 FROM pg_database WHERE datname='$dbName'"
     if ($exists -ne "1") {
-        psql -w "$conn" -c "CREATE DATABASE hrms_db"
+        psql -w "$conn" -c "CREATE DATABASE $dbName"
     }
 } catch {
     Write-Host "CRITICAL: Postgres Connection Failed! Check password/server." -ForegroundColor Red
